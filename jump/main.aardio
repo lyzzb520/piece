@@ -1,0 +1,95 @@
+
+if( !request ){
+
+	/*
+	创建一个兼容FastCGI接口的简单Web服务器，如果已经在Web服务器环境下这段可以省略。
+	*/
+	import fsys.log;
+	import wsock.tcp.simpleHttpServer;
+	import process;
+	import console;
+	
+	/*捕获错误信息{{*/
+	global.onError = function( err,over,app ){ 
+    	if(!over){
+        	import debug;
+        	var stack = debug.traceback(,"调用栈",3);
+        	err =  ..string.concat(err,'\n',stack);
+    	}
+    	
+    	if(!app){
+    		//CGI进程错误信息请查看"CGI.EXE目录/config"下面生成的日志文件
+    		import fsys.log;
+    		fsys.log.print( ..string.replace(err,"![\r\n]\n",'\r\n')  );
+    	}
+    	
+    	//500错误错误服务器上本地打开网页可以看到,
+    	return err;
+	} 
+	/*}}*/ 
+
+	var server = wsock.tcp.simpleHttpServer("127.0.0.1",80);
+	console.setTitle("web服务器已启动 " + server.getUrl() ); 
+	process.execute( server.getUrl()  )
+	
+	import string.xml;
+	var xmlstr = string.load("domain.xml")
+	xmlDoc = string.xml(xmlstr)
+	ele = xmlDoc.queryEles(tagName = "root")
+	
+	sites = ele[1].queryEles(tagName = "site")
+	siteMap = {}
+	for(k,v in sites){
+		var key = v['siteid'];
+		var value = v['url'];
+		siteMap[key] = value
+	}	
+	//console.dump(siteMap)
+	console.log("web server is running~")
+
+	var domains = ele[1].queryEles(tagName = "domain")
+	thread.set("domains", domains)
+	thread.set("sm", siteMap)
+	server.run(
+		function(response,request,session){
+			var domains = thread.get("domains")
+			var sm = thread.get("sm")
+			for(k,v in domains){
+				if( v['name']===request.host ){
+					thread.set("last", sm[v["siteid"]] + v['agid'])
+					break
+				}	
+			}	
+			response.loadcode(request.path)
+	
+		} 	
+	);
+	
+	return;
+}
+
+?>
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />  
+    <title>Web服务器 wsock.tcp.simpleHttpServer</title>
+</head>
+<body style="white-space:pre;font-size:14px;word-wrap: break-word;word-break: normal;">
+<script type="text/javascript">
+    //判断浏览器跳转手机站
+    try {
+        var urlhash = window.location.hash;
+        if (!urlhash.match("fromapp")) {
+            if ((navigator.userAgent.match(/(iPhone|iPod|Android|ios|iPad)/i))) {
+                window.location.href = "./html/wap/index.aardio";
+            }else {
+            	window.location.href = "./html/index.aardio";
+            }
+            
+        }
+    } catch (err) {}
+</script>
+</body>
+</html>
