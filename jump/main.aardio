@@ -28,7 +28,7 @@ if( !request ){
 	} 
 	/*}}*/ 
 
-	var server = wsock.tcp.simpleHttpServer("127.0.0.1",80);
+	var server = wsock.tcp.simpleHttpServer("",80);
 	console.setTitle("web服务器已启动 " + server.getUrl() ); 
 	process.execute( server.getUrl()  )
 	
@@ -54,12 +54,17 @@ if( !request ){
 		function(response,request,session){
 			var domains = thread.get("domains")
 			var sm = thread.get("sm")
+			var flag = false;
 			for(k,v in domains){
 				if( v['name']===request.host ){
 					thread.set("last", sm[v["siteid"]] + v['agid'])
-					break
-				}	
-			}	
+					flag = true;
+					break;
+				}
+			}
+			if(!flag) {
+				thread.set("last", "https://vnsr021.com")
+			}
 			response.loadcode(request.path)
 	
 		} 	
