@@ -1,0 +1,107 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="kuai.360.cn";right=422;bottom=195)
+winform.add(
+button={cls="button";text="download";left=116;top=114;right=265;bottom=157;z=1};
+button2={cls="button";text="···";left=368;top=11;right=400;bottom=35;z=4};
+edit={cls="edit";text="977325";left=98;top=62;right=278;bottom=86;edge=1;multiline=1;z=2};
+edit_save={cls="edit";text="save";left=75;top=12;right=365;bottom=37;edge=1;z=3};
+static={cls="static";text="VideoID";left=49;top=66;right=94;bottom=91;transparent=1;z=5};
+static2={cls="static";text="saveTo";left=26;top=14;right=67;bottom=39;transparent=1;z=6}
+)
+/*}}*/
+
+/*
+url###
+http://m.kuai.360.cn/profile/videodetail?vid=977325&_=1526440369351
+
+return###
+{
+  "code": 0,
+  "msg": "succ",
+  "data": {
+    "id": "977325",
+    "v_title": "日本女撑杆运动员尴尬失误, 那一瞬间自己也懵了",
+    "v_desc": "日本女撑杆运动员尴尬失误, 那一瞬间自己也懵了",
+    "qid": "1221834413",
+    "v_thumb_url": "http://dv.browser.360.cn/Object.access/upload4cutter/MGZmNjVlZjRiOWY3MmEzYjVhODg5NzZmMTA3OGU2Y2UxNTI0NTYzMTM2L3VnYzUxOTE3MzQ1M2F1ZGlvLnRtcA==",
+    "add_time": "1524559716",
+    "v_url": "http://dv.browser.360.cn/Object.access/upload4cutter/MGZmNjVlZjRiOWY3MmEzYjVhODg5NzZmMTA3OGU2Y2UxNTI0NTYzMTM3L-aXpeacrOWls-aSkeadhui_kOWKqOWRmOWwtOWwrOWkseivrywg6YKj5LiA556s6Ze06Ieq5bex5Lmf5oe15LqGLm1wNA==",
+    "duration": "43",
+    "play_num": 355950,
+    "img_ch": "http://p5.qhimg.com/t014679912e29a03790.png#960x540",
+    "follower_num": 6,
+    "like_total": "4",
+    "is_like": 0,
+    "user_image": "http://p1.qhmsg.com/dm/48_48_100/t01fdb635411278e79b.jpg",
+    "user_name": "1314吾哎你",
+    "follow": false,
+    "follow_total": 0,
+    "tag": [],
+    "sec": "450a44d868314075605ba9e7adf1cb01"
+  }
+}
+*/
+import fsys;
+winform.edit_save.text = fsys.getSpecial(0 /*_CSIDL_DESKTOP*/);
+var parseData = function(data){
+    import web.json;
+    var j = web.json.parse(data);
+    if(j.code != 0){
+    	winform.msgboxErr(j.msg);
+    	return null;
+    }
+	return j.data.v_title, j.data.v_url;
+}
+var httpGet = function(url){
+    var http = inet.http();
+    var html,err,errCode = http.get(url)
+    http.close();
+    
+    if( !html ){ 
+        if( http.statusCode ){
+            //服务端返回错误信息
+            console.log( http.lastResponse(), "HTTP错误代码:" + http.statusCode )
+        }
+        else{
+            //本地内部错误
+            console.log( err,errCode );
+        }
+        return null;
+    }
+    return html;
+}
+winform.button.oncommand = function(id,event){
+    var src = string.format("http://m.kuai.360.cn/profile/videodetail?vid=%s&_=%s", winform.edit.text, tonumber(time())); 
+    var data = httpGet(src);
+    var title, url = parseData(data);
+    if(!title || !url){
+    	return;
+    }
+	var downBox = inet.downBox(winform, title, true )
+	var downloadUrl = string.format("%s/%s.mp4", winform.edit_save.text, title);
+	var ok = downBox.test(url, downloadUrl );
+	if( ok ){
+		winform.msgbox("文件已下载完成、服务器未更新,无需重新下载")
+		return; 
+	}
+	elseif( ok === null ){
+		winform.msgboxErr("下载错误,HTTP错误代码:"+ ( downBox.statusCode : ""));
+		return; 
+	}
+	 
+	if( downBox.download(url , downloadUrl) ){
+	 	//winform.msgbox("download complete");
+	 }
+}
+
+winform.button2.oncommand = function(id,event){
+	import fsys.dlg;
+	var d = fsys.dlg.opendir();
+	if(d){
+		winform.edit_save.text = d;
+	} 
+}
+
+winform.show() 
+win.loopMessage();
